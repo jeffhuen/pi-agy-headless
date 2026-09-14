@@ -19,19 +19,38 @@ A standalone, zero-npm Google Antigravity extension for [Pi](https://github.com/
 
 ---
 
-## Installation
+## Installation & Updates
 
-Install directly via Pi's package manager:
+### Install via Pi
 
 ```bash
 pi install git:github.com/jeffhuen/pi-agy-headless
 ```
 
-Or for local development:
+### Update to Latest Version
 
 ```bash
-pi install ./pi-agy-headless
+pi update git:github.com/jeffhuen/pi-agy-headless
 ```
+
+### Uninstall / Remove
+
+```bash
+pi remove git:github.com/jeffhuen/pi-agy-headless
+```
+
+---
+
+## Authentication
+
+`pi-agy-headless` automatically discovers your Google Antigravity credentials in the following order:
+
+1. **macOS Keychain**: If you have used Antigravity on macOS, it automatically reads the OAuth token from Keychain (`security find-generic-password -s gemini -a antigravity`) without any prompts or browser popups.
+2. **Environment Variables**: Reads `ANTIGRAVITY_TOKEN` or `AGY_TOKEN` if set.
+3. **Pi Auth Cache**: Reads existing tokens stored in `~/.pi/agent/auth.json`.
+4. **Interactive Login**: Run `/login antigravity` inside Pi to initiate an OAuth login.
+   - On a desktop machine: Automatically listens on a local loopback port and completes login via browser.
+   - In remote/headless environments: Prints the authorization URL and prompts you to paste the callback URL or authorization code directly in your terminal.
 
 ---
 
@@ -63,3 +82,22 @@ pi install ./pi-agy-headless
    ```text
    /antigravity.doctor
    ```
+
+### Set as Default Provider
+
+Add to `~/.pi/agent/settings.json`:
+
+```json
+{
+  "defaultProvider": "antigravity",
+  "defaultModel": "gemini-3.8-flash",
+  "defaultThinkingLevel": "high"
+}
+```
+
+---
+
+## License
+
+MIT © Jeff Huen
+
