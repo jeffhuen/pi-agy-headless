@@ -690,6 +690,16 @@ class AssistantMessageEventStream {
 
 // --- SSE Streaming Protocol ---
 
+function isGeminiThoughtSignature(sig: unknown): boolean {
+  if (typeof sig !== "string") return false;
+  const trimmed = sig.trim();
+  if (trimmed.length < 8) return false;
+  // Exclude JSON or structured payloads from foreign providers (Meta, OpenAI Responses, Anthropic)
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) return false;
+  // Valid Base64 / Base64URL string only
+  return /^[A-Za-z0-9+/=_-]+$/.test(trimmed);
+}
+
 function createStreamSimple() {
   return (model: any, context: any, options: any) => {
     const stream = new AssistantMessageEventStream();
@@ -744,27 +754,45 @@ function createStreamSimple() {
           } else if (Array.isArray(msg.content)) {
             for (const item of msg.content) {
               if (item.type === "thinking") {
-                parts.push({
-                  thought: true,
-                  text: item.thinking || "",
-                  ...(item.thinkingSignature ? { thoughtSignature: item.thinkingSignature } : {}),
-                });
+                const thoughtSignature = isGeminiThoughtSignature(item.thinkingSignature)
+                  ? item.thinkingSignature
+                  : undefined;
+                if (item.thinking || thoughtSignature) {
+                  parts.push({
+                    thought: true,
+                    text: item.thinking || "",
+                    ...(thoughtSignature ? { thoughtSignature } : {}),
+                  });
+                }
               } else if (item.type === "text") {
+                const thoughtSignature = isGeminiThoughtSignature(item.textSignature)
+                  ? item.textSignature
+                  : undefined;
                 parts.push({
                   text: item.text,
-                  ...(item.textSignature ? { thoughtSignature: item.textSignature } : {}),
+                  ...(thoughtSignature ? { thoughtSignature } : {}),
                 });
               } else if (item.type === "toolCall" || item.type === "tool_call" || item.toolCall) {
                 const call = item.toolCall || item;
+                const rawSig = call.thoughtSignature || item.thoughtSignature;
+                const thoughtSignature = isGeminiThoughtSignature(rawSig) ? rawSig : undefined;
+                let args = {};
+                if (typeof call.arguments === "string") {
+                  try {
+                    args = JSON.parse(call.arguments);
+                  } catch {
+                    args = {};
+                  }
+                } else if (call.arguments || call.args) {
+                  args = call.arguments || call.args;
+                }
                 parts.push({
                   functionCall: {
                     id: call.id,
                     name: call.name,
-                    args: typeof call.arguments === "string" ? JSON.parse(call.arguments || "{}") : (call.arguments || call.args || {}),
+                    args,
                   },
-                  ...(call.thoughtSignature || item.thoughtSignature || item.textSignature
-                    ? { thoughtSignature: call.thoughtSignature || item.thoughtSignature || item.textSignature }
-                    : {}),
+                  ...(thoughtSignature ? { thoughtSignature } : {}),
                 });
               } else if (item.type === "toolResult" || item.type === "tool_result") {
                 parts.push({
