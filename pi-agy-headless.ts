@@ -700,6 +700,68 @@ function isGeminiThoughtSignature(sig: unknown): boolean {
   return /^[A-Za-z0-9+/=_-]+$/.test(trimmed);
 }
 
+// --- Pi transcript compatibility ---
+// Pi delivers prompts and tools folded into transcript system messages
+// (content + sections, toolsAdded/toolsRemoved deltas); older harnesses pass
+// context.systemPrompt / context.tools directly. These resolvers accept both
+// shapes, preferring the direct fields when present.
+
+export function transcriptContentText(content: any, separator = "\n"): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((b: any) => b && b.type === "text" && typeof b.text === "string")
+    .map((b: any) => b.text)
+    .join(separator);
+}
+
+// Mirror of pi-ai getSystemMessageText + renderSystemMessageUpdate.
+export function resolveSystemPrompt(context: any): string {
+  if (context.systemPrompt && String(context.systemPrompt).trim()) {
+    return String(context.systemPrompt);
+  }
+  const parts: string[] = [];
+  let first = true;
+  for (const msg of context.messages || []) {
+    if (!msg || msg.role !== "system") continue;
+    if (first) {
+      const segs = [transcriptContentText(msg.content)];
+      for (const value of Object.values(msg.sections ?? {})) {
+        if (value !== null && value !== undefined) segs.push(String(value));
+      }
+      const text = segs.filter((s) => s.length > 0).join("\n\n");
+      if (text) parts.push(text);
+      first = false;
+    } else {
+      const segs: string[] = [];
+      const head = transcriptContentText(msg.content);
+      if (head.length > 0) segs.push(head);
+      for (const [name, value] of Object.entries(msg.sections ?? {})) {
+        segs.push(
+          value === null || value === undefined
+            ? `Removed system prompt section "${name}".`
+            : `Updated system prompt section "${name}":\n\n${value}`
+        );
+      }
+      const text = segs.join("\n\n");
+      if (text) parts.push(text);
+    }
+  }
+  return parts.join("\n\n");
+}
+
+// Mirror of pi-ai getCurrentTools: replay tool deltas in transcript order.
+export function resolveContextTools(context: any): any[] | undefined {
+  if (context.tools && context.tools.length > 0) return context.tools;
+  const tools = new Map<string, any>();
+  for (const msg of context.messages || []) {
+    if (!msg) continue;
+    for (const t of msg.toolsRemoved ?? []) tools.delete(t.name);
+    for (const t of msg.toolsAdded ?? []) tools.set(t.name, t);
+  }
+  return tools.size > 0 ? [...tools.values()] : undefined;
+}
+
 function createStreamSimple() {
   return (model: any, context: any, options: any) => {
     const stream = new AssistantMessageEventStream();
@@ -736,13 +798,11 @@ function createStreamSimple() {
         const contents: any[] = [];
         let systemText = "";
 
-        if (context.systemPrompt) {
-          systemText = context.systemPrompt;
-        }
+        systemText = resolveSystemPrompt(context);
 
         for (const msg of context.messages || []) {
           if (msg.role === "system") {
-            systemText += (systemText ? "\n\n" : "") + (typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content));
+            // Already merged into systemText by resolveSystemPrompt above.
             continue;
           }
 
@@ -813,8 +873,9 @@ function createStreamSimple() {
 
         // Convert tools
         let tools: any[] | undefined;
-        if (context.tools && context.tools.length > 0) {
-          const fds = context.tools.map((t: any) => ({
+        const resolvedTools = resolveContextTools(context);
+        if (resolvedTools && resolvedTools.length > 0) {
+          const fds = resolvedTools.map((t: any) => ({
             name: t.name,
             description: t.description || "",
             parameters: t.parameters || t.inputSchema || { type: "OBJECT" },
