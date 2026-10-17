@@ -10,7 +10,8 @@ A standalone, zero-npm Google Antigravity extension for [Pi](https://github.com/
    - Automatically checks `ANTIGRAVITY_TOKEN` or `AGY_TOKEN` environment variables.
    - In remote/SSH sessions without a desktop, `/login antigravity` provides an interactive terminal paste prompt for authorization codes so localhost redirects never hang.
    - When a desktop is present, standard loopback callback redirects are seamlessly supported.
-3. **Full Gemini 3.8 Flash Support**:
+3. **Full Gemini 4 Argon & 3.8 Flash Support**:
+   - First-class support for `gemini-4-argon` with default high reasoning, plus `low` and `medium` variants.
    - First-class support for `gemini-3.8-flash` with default high reasoning, plus `low` and `medium` variants.
    - Connects directly to Google's official Antigravity PredictionService (`https://daily-cloudcode-pa.googleapis.com`).
    - Automatically attaches and preserves `thoughtSignature` across multi-turn tool calling.
@@ -58,10 +59,13 @@ pi remove git:github.com/jeffhuen/pi-agy-headless
 
 | Public Model ID | Upstream Runtime Model | Supported Thinking Levels | Context Window | Max Output |
 | :--- | :--- | :--- | :--- | :--- |
+| `gemini-4-argon` | `gemini-4-argon-high` *(default)* | `low`, `medium`, `high` | 1,048,576 | 65,536 |
 | `gemini-3.8-flash` | `gemini-3.8-flash-high` *(default)* | `low`, `medium`, `high` | 1,048,576 | 65,536 |
 | `gemini-3.7-flash` | `gemini-3.7-flash-high` | `low`, `medium`, `high` | 1,048,576 | 65,536 |
 | `gemini-3.6-flash` | `gemini-3.6-flash-high` | `low`, `medium`, `high` | 1,048,576 | 65,536 |
 | `gemini-3.1-pro` | `gemini-pro-agent` | `low`, `high` | 1,048,576 | 65,535 |
+| `claude-sonnet-5-5` | `claude-sonnet-5-5-high` *(default)* | `low`, `medium`, `high` | 200,000 | 64,000 |
+| `claude-opus-5-5` | `claude-opus-5-5-high` *(default)* | `low`, `medium`, `high` | 250,000 | 64,000 |
 | `claude-sonnet-4-6` | `claude-sonnet-4-6` | `high` | 200,000 | 64,000 |
 | `claude-opus-4-6` | `claude-opus-4-6-thinking` | `high` | 250,000 | 64,000 |
 | `gpt-oss-120b` | `gpt-oss-120b-medium` | `medium` | 131,072 | 32,768 |

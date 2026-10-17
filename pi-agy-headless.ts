@@ -8,8 +8,9 @@
  *    - Auto-reads ANTIGRAVITY_TOKEN or AGY_TOKEN env vars.
  *    - Supports manual callback URL/code pasting for remote/SSH headless environments.
  *    - Fallback local loopback server when a desktop browser is available.
- * 3. Gemini 3.8 Flash First-Class:
- *    - Maps to gemini-3.8-flash-high, gemini-3.8-flash-medium, gemini-3.8-flash-low.
+ * 3. Gemini 4 Argon & 3.8 Flash First-Class:
+ *    - Argon maps to gemini-4-argon-high, gemini-4-argon-medium, gemini-4-argon-low.
+ *    - Flash maps to gemini-3.8-flash-high, gemini-3.8-flash-medium, gemini-3.8-flash-low.
  *    - Connects directly to Google Antigravity upstream (daily-cloudcode-pa.googleapis.com).
  *    - Full thoughtSignature preservation across multi-turn tool calling.
  */
@@ -116,6 +117,39 @@ export const ANTIGRAVITY_ROUTING: Record<string, ModelRouting> = {
       xhigh: "gemini-3.8-flash-low",
     },
   },
+  "gemini-4-argon": {
+    off: "gemini-4-argon-low",
+    defaultRequestId: "gemini-4-argon-high",
+    routing: {
+      minimal: "gemini-4-argon-low",
+      low: "gemini-4-argon-low",
+      medium: "gemini-4-argon-medium",
+      high: "gemini-4-argon-high",
+      xhigh: "gemini-4-argon-high",
+    },
+  },
+  "gemini-4-argon-medium": {
+    off: "gemini-4-argon-medium",
+    defaultRequestId: "gemini-4-argon-medium",
+    routing: {
+      minimal: "gemini-4-argon-medium",
+      low: "gemini-4-argon-medium",
+      medium: "gemini-4-argon-medium",
+      high: "gemini-4-argon-medium",
+      xhigh: "gemini-4-argon-medium",
+    },
+  },
+  "gemini-4-argon-low": {
+    off: "gemini-4-argon-low",
+    defaultRequestId: "gemini-4-argon-low",
+    routing: {
+      minimal: "gemini-4-argon-low",
+      low: "gemini-4-argon-low",
+      medium: "gemini-4-argon-low",
+      high: "gemini-4-argon-low",
+      xhigh: "gemini-4-argon-low",
+    },
+  },
   "gemini-3.7-flash": {
     off: "gemini-3.7-flash-low",
     defaultRequestId: "gemini-3.7-flash-high",
@@ -169,6 +203,72 @@ export const ANTIGRAVITY_ROUTING: Record<string, ModelRouting> = {
       medium: "claude-opus-4-6-thinking",
       high: "claude-opus-4-6-thinking",
       xhigh: "claude-opus-4-6-thinking",
+    },
+  },
+  "claude-sonnet-5-5": {
+    off: "claude-sonnet-5-5-low",
+    defaultRequestId: "claude-sonnet-5-5-high",
+    routing: {
+      minimal: "claude-sonnet-5-5-low",
+      low: "claude-sonnet-5-5-low",
+      medium: "claude-sonnet-5-5-medium",
+      high: "claude-sonnet-5-5-high",
+      xhigh: "claude-sonnet-5-5-high",
+    },
+  },
+  "claude-sonnet-5-5-medium": {
+    off: "claude-sonnet-5-5-medium",
+    defaultRequestId: "claude-sonnet-5-5-medium",
+    routing: {
+      minimal: "claude-sonnet-5-5-medium",
+      low: "claude-sonnet-5-5-medium",
+      medium: "claude-sonnet-5-5-medium",
+      high: "claude-sonnet-5-5-medium",
+      xhigh: "claude-sonnet-5-5-medium",
+    },
+  },
+  "claude-sonnet-5-5-low": {
+    off: "claude-sonnet-5-5-low",
+    defaultRequestId: "claude-sonnet-5-5-low",
+    routing: {
+      minimal: "claude-sonnet-5-5-low",
+      low: "claude-sonnet-5-5-low",
+      medium: "claude-sonnet-5-5-low",
+      high: "claude-sonnet-5-5-low",
+      xhigh: "claude-sonnet-5-5-low",
+    },
+  },
+  "claude-opus-5-5": {
+    off: "claude-opus-5-5-low",
+    defaultRequestId: "claude-opus-5-5-high",
+    routing: {
+      minimal: "claude-opus-5-5-low",
+      low: "claude-opus-5-5-low",
+      medium: "claude-opus-5-5-medium",
+      high: "claude-opus-5-5-high",
+      xhigh: "claude-opus-5-5-high",
+    },
+  },
+  "claude-opus-5-5-medium": {
+    off: "claude-opus-5-5-medium",
+    defaultRequestId: "claude-opus-5-5-medium",
+    routing: {
+      minimal: "claude-opus-5-5-medium",
+      low: "claude-opus-5-5-medium",
+      medium: "claude-opus-5-5-medium",
+      high: "claude-opus-5-5-medium",
+      xhigh: "claude-opus-5-5-medium",
+    },
+  },
+  "claude-opus-5-5-low": {
+    off: "claude-opus-5-5-low",
+    defaultRequestId: "claude-opus-5-5-low",
+    routing: {
+      minimal: "claude-opus-5-5-low",
+      low: "claude-opus-5-5-low",
+      medium: "claude-opus-5-5-low",
+      high: "claude-opus-5-5-low",
+      xhigh: "claude-opus-5-5-low",
     },
   },
   "gpt-oss-120b": {
@@ -227,6 +327,16 @@ const thinkingLevelMaps = {
 
 export const ANTIGRAVITY_MODELS = [
   {
+    id: "gemini-4-argon",
+    name: "Gemini 4 Argon (Antigravity)",
+    reasoning: true,
+    thinkingLevelMap: thinkingLevelMaps.lowMediumHigh,
+    input: ["text", "image"],
+    cost: freeCost,
+    contextWindow: 1048576,
+    maxTokens: 65536,
+  },
+  {
     id: "gemini-3.8-flash",
     name: "Gemini 3.8 Flash (Antigravity)",
     reasoning: true,
@@ -279,6 +389,26 @@ export const ANTIGRAVITY_MODELS = [
   {
     id: "claude-opus-4-6",
     name: "Claude Opus 4.6 (Thinking)",
+    reasoning: true,
+    thinkingLevelMap: thinkingLevelMaps.thinking,
+    input: ["text", "image"],
+    cost: freeCost,
+    contextWindow: 250000,
+    maxTokens: 64000,
+  },
+  {
+    id: "claude-sonnet-5-5",
+    name: "Claude Sonnet 5.5 (Thinking)",
+    reasoning: true,
+    thinkingLevelMap: thinkingLevelMaps.thinking,
+    input: ["text", "image"],
+    cost: freeCost,
+    contextWindow: 200000,
+    maxTokens: 64000,
+  },
+  {
+    id: "claude-opus-5-5",
+    name: "Claude Opus 5.5 (Thinking)",
     reasoning: true,
     thinkingLevelMap: thinkingLevelMaps.thinking,
     input: ["text", "image"],
