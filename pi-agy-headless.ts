@@ -66,7 +66,10 @@ export const CLIENT_SECRET =
 function getSystemUserAgent(): string {
   const osType = process.platform === "darwin" ? "darwin" : process.platform === "win32" ? "windows" : "linux";
   const arch = process.arch === "x64" ? "amd64" : process.arch;
-  return `antigravity/cli/1.1.27 (aidev_client; os_type=${osType}; arch=${arch}; cl=976543523; auth_method=consumer)`;
+  // Upstream gates newer models (e.g. gemini-4-argon) on the reported CLI
+  // version/build: 1.1.27/cl=976543523 gets 404 for them. Keep in step with
+  // the installed `agy` CLI build.
+  return `antigravity/cli/1.4.0 (aidev_client; os_type=${osType}; arch=${arch}; cl=1000494485; auth_method=consumer)`;
 }
 
 // --- Model Catalog & Routing ---
