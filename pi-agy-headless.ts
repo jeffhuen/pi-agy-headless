@@ -895,6 +895,42 @@ export function resolveContextTools(context: any): any[] | undefined {
   return tools.size > 0 ? [...tools.values()] : undefined;
 }
 
+// Gemini function declarations take an OpenAPI subset with no `const`. TypeBox
+// Type.Union([Type.Literal(..)]) emits anyOf/const, which the API rejects with a
+// 400, so rewrite constants as enums. Only schema positions are walked, never
+// property names, so a parameter called "const" is left alone.
+type JsonSchema = Record<string, unknown>;
+
+function isJsonSchema(value: unknown): value is JsonSchema {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function toGeminiSchema(schema: unknown): unknown {
+  if (!isJsonSchema(schema)) return schema;
+  const out: JsonSchema = { ...schema };
+  const alts = out.anyOf ?? out.oneOf;
+  if (Array.isArray(alts) && alts.length > 0 && alts.every((a): a is JsonSchema => isJsonSchema(a) && "const" in a)) {
+    delete out.anyOf;
+    delete out.oneOf;
+    out.type = alts[0].type ?? typeof alts[0].const;
+    out.enum = alts.map((a) => a.const);
+  } else if ("const" in out) {
+    out.enum = [out.const];
+    delete out.const;
+  }
+  if (isJsonSchema(out.properties)) {
+    out.properties = Object.fromEntries(
+      Object.entries(out.properties).map(([name, sub]) => [name, toGeminiSchema(sub)])
+    );
+  }
+  if (out.items) out.items = toGeminiSchema(out.items);
+  for (const key of ["anyOf", "oneOf", "allOf"]) {
+    const list = out[key];
+    if (Array.isArray(list)) out[key] = list.map(toGeminiSchema);
+  }
+  return out;
+}
+
 function createStreamSimple() {
   return (model: any, context: any, options: any) => {
     const stream = new AssistantMessageEventStream();
@@ -1011,7 +1047,7 @@ function createStreamSimple() {
           const fds = resolvedTools.map((t: any) => ({
             name: t.name,
             description: t.description || "",
-            parameters: t.parameters || t.inputSchema || { type: "OBJECT" },
+            parameters: toGeminiSchema(t.parameters || t.inputSchema || { type: "OBJECT" }),
           }));
           tools = [{ functionDeclarations: fds }];
         }
